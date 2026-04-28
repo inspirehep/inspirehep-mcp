@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "inspirehep": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "/absolute/path/to/inspirehep-mcp",
+        "python",
+        "server.py"
+      ]
+    }
+  }
+}

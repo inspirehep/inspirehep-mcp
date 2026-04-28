@@ -1,0 +1,67 @@
+[project]
+name = "inspirehep-mcp"
+version = "0.1.0"
+description = "MCP server exposing the InspireHEP literature database to Claude and other MCP clients"
+readme = "README.md"
+requires-python = ">=3.11"
+keywords = ["mcp", "inspirehep", "hep", "physics", "literature", "claude"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+dependencies = [
+    "mcp[cli]>=1.27.0",
+    "httpx>=0.28.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/pascalegner/inspirehep-mcp"
+Repository = "https://github.com/pascalegner/inspirehep-mcp"
+Issues = "https://github.com/pascalegner/inspirehep-mcp/issues"
+
+[project.scripts]
+inspirehep-mcp = "server:mcp"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.6.0",
+    "ruff>=0.15.12",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+    "RUF", # ruff-specific rules
+]
+ignore = [
+    "E501",   # line too long — handled by formatter
+    "RUF002", # en-dash in docstrings — intentional for ranges (1–25)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["server"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
