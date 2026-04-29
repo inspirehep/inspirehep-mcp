@@ -1,0 +1,21 @@
+name: Lint
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: The reference to lint
+        type: string
+        required: true
+
+jobs:
+  linter:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Pre-commit check
+        uses: pre-commit/action@v3.0.1
