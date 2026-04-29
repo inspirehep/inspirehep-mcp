@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import httpx
 from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp.server import TransportSecuritySettings
 
 # ---------------------------------------------------------------------------
 # Server setup
@@ -277,6 +278,7 @@ async def get_papers_by_author(
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
+    import os
     import sys
 
     transport = "stdio"
@@ -293,6 +295,13 @@ if __name__ == "__main__":
     if transport == "http":
         mcp.settings.host = "0.0.0.0"
         mcp.settings.port = port
+        allowed_host = os.environ.get("ALLOWED_HOST")
+        if allowed_host:
+            mcp.settings.transport_security = TransportSecuritySettings(
+                enable_dns_rebinding_protection=True,
+                allowed_hosts=[allowed_host, "127.0.0.1:*", "localhost:*"],
+                allowed_origins=[f"https://{allowed_host}", "http://127.0.0.1:*", "http://localhost:*"],
+            )
         mcp.run(transport="streamable-http")
     else:
         mcp.run(transport="stdio")
