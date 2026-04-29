@@ -11,6 +11,7 @@ COPY server.py .
 
 FROM base AS test
 RUN poetry install --no-interaction
+COPY tests/ app/tests/.
 
 FROM base AS prod
 EXPOSE 8000
