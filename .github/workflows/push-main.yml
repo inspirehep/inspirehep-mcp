@@ -41,5 +41,5 @@ jobs:
           event-type: update
           repo: cern-sis/kubernetes-inspire
           images: |
-            cern-sis/inspire/inspirehep-mcp${{ needs.build-and-push.outputs.image-id }}
+            cern-sis/inspire/inspirehep-mcp@${{ needs.build-and-push.outputs.image-id }}
           token: ${{ secrets.PAT_FIRE_EVENTS_ON_CERN_SIS_KUBERNETES }}
