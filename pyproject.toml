@@ -1,44 +1,37 @@
-[project]
+[tool.poetry]
 name = "inspirehep-mcp"
 version = "0.1.0"
 description = "MCP server exposing the InspireHEP literature database to Claude and other MCP clients"
 readme = "README.md"
-requires-python = ">=3.11"
 keywords = ["mcp", "inspirehep", "hep", "physics", "literature", "claude"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Physics",
 ]
-dependencies = [
-    "mcp[cli]>=1.27.0",
-    "httpx>=0.28.1",
-]
+homepage = "https://github.com/inspirehep/inspirehep-mcp"
+repository = "https://github.com/inspirehep/inspirehep-mcp"
+package-mode = false
 
-[project.urls]
-Homepage = "https://github.com/pascalegner/inspirehep-mcp"
-Repository = "https://github.com/pascalegner/inspirehep-mcp"
-Issues = "https://github.com/pascalegner/inspirehep-mcp/issues"
+[tool.poetry.dependencies]
+python = ">=3.11,<3.13"
+mcp = {version = ">=1.27.0", extras = ["cli"]}
+httpx = ">=0.28.1"
 
-[project.scripts]
+[tool.poetry.group.dev.dependencies]
+pre-commit = ">=4.6.0"
+ruff = ">=0.15.12"
+pytest = ">=8.0.0"
+
+[tool.poetry.scripts]
 inspirehep-mcp = "server:mcp"
 
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[tool.hatch.build.targets.wheel]
-packages = ["."]
-
-[dependency-groups]
-dev = [
-    "pre-commit>=4.6.0",
-    "ruff>=0.15.12",
-]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
 target-version = "py311"

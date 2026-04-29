@@ -291,6 +291,8 @@ if __name__ == "__main__":
         port = int(args[idx + 1])
 
     if transport == "http":
-        mcp.run(transport="streamable-http", port=port)
+        mcp.settings.host = "0.0.0.0"
+        mcp.settings.port = port
+        mcp.run(transport="streamable-http")
     else:
         mcp.run(transport="stdio")
