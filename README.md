@@ -33,8 +33,8 @@ Fetch InspireHEP record 451647
 
 ## Requirements
 
-- Python ≥ 3.11
-- [uv](https://docs.astral.sh/uv/) (recommended) **or** pip
+- Python 3.12 (managed via [pyenv](https://github.com/pyenv/pyenv))
+- [Poetry](https://python-poetry.org/)
 
 ---
 
@@ -43,12 +43,34 @@ Fetch InspireHEP record 451647
 ```bash
 git clone https://github.com/inspirehep/inspirehep-mcp.git
 cd inspirehep-mcp
-uv sync
+pyenv install 3.12
+poetry install
 ```
 
 ---
 
 ## Claude Desktop setup
+
+### Remote (hosted on inspirehep.net)
+
+1. Open (or create) `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+2. Add the `inspirehep` entry:
+
+```json
+{
+  "mcpServers": {
+    "inspirehep": {
+      "type": "http",
+      "url": "https://mcp.inspirehep.net/mcp"
+    }
+  }
+}
+```
+
+3. Quit and reopen Claude Desktop.
+
+### Local (running from source)
 
 1. Open (or create) `~/Library/Application Support/Claude/claude_desktop_config.json`
 
@@ -58,21 +80,19 @@ uv sync
 {
   "mcpServers": {
     "inspirehep": {
-      "command": "uv",
+      "command": "poetry",
       "args": [
         "run",
-        "--directory",
-        "/absolute/path/to/inspirehep-mcp",
         "python",
         "server.py"
-      ]
+      ],
+      "cwd": "/absolute/path/to/inspirehep-mcp"
     }
   }
 }
 ```
 
-3. Quit and reopen Claude Desktop. The hammer icon in the input bar should list
-   the five InspireHEP tools.
+3. Quit and reopen Claude Desktop.
 
 A filled-in template lives in [`claude_desktop_config.json.example`](claude_desktop_config.json.example).
 
@@ -80,22 +100,34 @@ A filled-in template lives in [`claude_desktop_config.json.example`](claude_desk
 
 ## Claude Code setup
 
+### Remote
 ```bash
-claude mcp add inspirehep -- uv run --project /absolute/path/to/inspirehep-mcp python server.py
+claude mcp add --transport http inspirehep https://mcp.inspirehep.net/mcp
+```
+
+### Local
+```bash
+claude mcp add inspirehep -- poetry run python /absolute/path/to/inspirehep-mcp/server.py
 ```
 
 ---
 
 ## Running the server manually
 
-**stdio** (default — used by Claude Desktop / Claude Code):
+**stdio** (default — used by Claude Desktop / Claude Code local setup):
 ```bash
-uv run python server.py
+poetry run python server.py
 ```
 
 **HTTP** (remote / multi-client):
 ```bash
-uv run python server.py --transport http --port 8000
+poetry run python server.py --transport http --port 8000
+# Server available at http://localhost:8000/mcp
+```
+
+**Docker:**
+```bash
+docker run -p 8000:8000 registry.cern.ch/cern-sis/inspire/inspirehep-mcp:latest
 # Server available at http://localhost:8000/mcp
 ```
 
@@ -134,9 +166,9 @@ identifier was used.
 ## Development
 
 ```bash
-uv sync
-uv run pre-commit install       # install git hooks
-uv run pre-commit run --all-files   # run all hooks manually
-uv run ruff check server.py     # lint
-uv run ruff format server.py    # format
+poetry install
+poetry run pre-commit install           # install git hooks
+poetry run pre-commit run --all-files   # run all hooks manually
+poetry run ruff check server.py         # lint
+poetry run ruff format server.py        # format
 ```
