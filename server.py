@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 import httpx
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.server import TransportSecuritySettings
@@ -8,7 +10,8 @@ from mcp.server.fastmcp.server import TransportSecuritySettings
 # Server setup
 # ---------------------------------------------------------------------------
 
-BASE_URL = "https://inspirehep.net/api"
+INSPIRE_URL = os.environ.get("INSPIRE_URL", "https://inspirehep.net").rstrip("/")
+BASE_URL = f"{INSPIRE_URL}/api"
 DEFAULT_PAGE_SIZE = 10
 MAX_PAGE_SIZE = 25
 
@@ -66,7 +69,7 @@ def _build_paper_summary(hit: dict) -> dict:
         "arxiv_id": arxiv_id,
         "doi": doi,
         "citation_count": meta.get("citation_count", 0),
-        "inspire_url": f"https://inspirehep.net/literature/{inspire_id}",
+        "inspire_url": f"{INSPIRE_URL}/literature/{inspire_id}",
     }
 
 
@@ -278,7 +281,6 @@ async def get_papers_by_author(
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    import os
     import sys
 
     transport = "stdio"

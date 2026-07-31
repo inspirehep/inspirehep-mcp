@@ -131,6 +131,13 @@ docker run -p 8000:8000 registry.cern.ch/cern-sis/inspire/inspirehep-mcp:latest
 # Server available at http://localhost:8000/mcp
 ```
 
+### Environment variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `INSPIRE_URL` | `https://inspirehep.net` | INSPIRE instance the tools search, and the base of the record links they return. Set it to `https://inspirebeta.net` to run against QA. |
+| `ALLOWED_HOST` | *(unset)* | Hostname the HTTP transport is served under, e.g. `mcp.inspirehep.net`. Required behind a proxy: without it, requests are rejected with `421 Invalid Host header`. |
+
 ---
 
 ## Search syntax
