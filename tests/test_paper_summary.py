@@ -1,6 +1,11 @@
 """Tests for the summaries the tools hand back to a model."""
 
-from server import _build_paper_summary
+from server import (
+    MAX_ABSTRACT_CHARS,
+    MIN_ABSTRACT_CHARS,
+    _abstract_limit,
+    _build_paper_summary,
+)
 
 
 def _hit(**metadata) -> dict:
@@ -64,13 +69,29 @@ def test_falls_back_through_the_dates_it_has():
 
 
 def test_truncates_a_long_abstract():
-    summary = _build_paper_summary(_hit(abstracts=[{"value": "x" * 800}]))
+    summary = _build_paper_summary(_hit(abstracts=[{"value": "x" * 800}]), 500)
     assert summary["abstract"] == "x" * 500 + "…"
 
 
 def test_keeps_a_short_abstract_whole():
-    summary = _build_paper_summary(_hit(abstracts=[{"value": "Short one."}]))
+    summary = _build_paper_summary(_hit(abstracts=[{"value": "Short one."}]), 500)
     assert summary["abstract"] == "Short one."
+
+
+def test_asking_for_fewer_papers_buys_longer_abstracts():
+    assert _abstract_limit(25) < _abstract_limit(10) < _abstract_limit(5)
+
+
+def test_spends_about_the_same_on_abstracts_however_many_papers():
+    """A wide survey should not cost several times what a narrow one does."""
+    for count in (5, 10, 25):
+        assert 4000 <= _abstract_limit(count) * count <= 6000
+
+
+def test_clamps_the_abstract_length_at_both_ends():
+    assert _abstract_limit(1000) == MIN_ABSTRACT_CHARS
+    assert _abstract_limit(1) == MAX_ABSTRACT_CHARS
+    assert _abstract_limit(0) == MAX_ABSTRACT_CHARS
 
 
 def test_drops_fields_it_has_nothing_to_say_about():

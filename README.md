@@ -170,6 +170,34 @@ identifier was used.
 
 ---
 
+## Abstract length
+
+Abstracts are budgeted, not fixed. Every search spends roughly the same total
+on abstract text however many papers it asks for, so a page of 25 costs about
+what a page of 5 does — each paper just gets a shorter one (about 200
+characters at 25 results, 500 at 10, 1000 at 5).
+
+The intended way to use this is to search broadly to find the right papers,
+then re-query the interesting ones with a small `count`, or with
+`get_paper_by_id`, to read them properly. The tool descriptions say so, so a
+model can make that trade deliberately.
+
+---
+
+## Journal names
+
+INSPIRE indexes journals under abbreviations: `j Physical Review D` matches
+nothing, `j Phys.Rev.D` matches everything. `get_papers_by_publisher` accepts
+either, resolving full names through `/api/journals` first.
+
+Ranking alone is not enough to pick with — searching `JHEP` ranks
+*JHEP Grav.Cosmol.* above *JHEP*, and `Nuclear Physics B` ranks
+*Nucl.Phys.B Proc.Suppl.* above *Nucl.Phys.B* — so an exact match on the
+abbreviation or the full title wins first, and only then the shortest matching
+title. When nothing matches, the name is passed through unchanged.
+
+---
+
 ## How records are fetched
 
 Literature records are requested through INSPIRE's UI serializer
