@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 
 import httpx
 from mcp.server.fastmcp import FastMCP
@@ -14,6 +15,12 @@ INSPIRE_URL = os.environ.get("INSPIRE_URL", "https://inspirehep.net").rstrip("/"
 BASE_URL = f"{INSPIRE_URL}/api"
 DEFAULT_PAGE_SIZE = 10
 MAX_PAGE_SIZE = 25
+
+UI_SERIALIZER_HEADERS = {"Accept": "application/vnd+inspire.record.ui+json"}
+
+MAX_AUTHOR_NAMES = 3
+ABSTRACT_LIMIT = 500
+YEAR_REGEXP = re.compile(r"\d{4}")
 
 mcp = FastMCP(
     name="InspireHEP",
@@ -30,47 +37,70 @@ mcp = FastMCP(
 # ---------------------------------------------------------------------------
 
 
+def _build_author_names(meta: dict) -> list[str]:
+    """Name the first few authors, and say honestly how many were left out."""
+    authors = meta.get("authors") or []
+    names = [a.get("full_name", "") for a in authors[:MAX_AUTHOR_NAMES]]
+    total = meta.get("number_of_authors") or len(authors)
+    if total > len(names):
+        names.append("et al.")
+    return names
+
+
+def _extract_year(meta: dict) -> str:
+    """
+    Find the year a paper first appeared.
+
+    The UI serializer has no `earliest_date`, so this walks the dates it does
+    carry, earliest first, to keep meaning the same thing as before.
+    """
+    preprint_date = meta.get("preprint_date") or ""
+    if preprint_date[:4].isdigit():
+        return preprint_date[:4]
+
+    displayed = YEAR_REGEXP.search(meta.get("date") or "")
+    if displayed:
+        return displayed.group()
+
+    publication_info = meta.get("publication_info") or [{}]
+    return str(publication_info[0].get("year") or "")
+
+
 def _build_paper_summary(hit: dict) -> dict:
-    """Extract the most useful fields from a raw InspireHEP literature hit."""
+    """
+    Extract the most useful fields from an InspireHEP literature hit.
+
+    Empty fields are dropped rather than sent as blanks: every paper is read by
+    a model, and `"doi": ""` costs tokens to say nothing.
+    """
     meta = hit.get("metadata", {})
 
-    titles = meta.get("titles", [])
-    title = titles[0].get("title", "N/A") if titles else "N/A"
+    titles = meta.get("titles") or [{}]
+    abstracts = meta.get("abstracts") or [{}]
+    arxiv_eprints = meta.get("arxiv_eprints") or [{}]
+    dois = meta.get("dois") or [{}]
+    publication_info = meta.get("publication_info") or [{}]
 
-    authors = meta.get("authors", [])
-    author_names = [a.get("full_name", "") for a in authors[:5]]
-    if len(authors) > 5:
-        author_names.append("et al.")
-
-    abstracts = meta.get("abstracts", [])
-    abstract = abstracts[0].get("value", "") if abstracts else ""
-
-    arxiv_eprints = meta.get("arxiv_eprints", [])
-    arxiv_id = arxiv_eprints[0].get("value", "") if arxiv_eprints else ""
-
-    dois = meta.get("dois", [])
-    doi = dois[0].get("value", "") if dois else ""
-
-    publication_info = meta.get("publication_info", [])
-    journal = ""
-    if publication_info:
-        info = publication_info[0]
-        journal = info.get("journal_title", "")
-
+    abstract = abstracts[0].get("value", "")
     inspire_id = meta.get("control_number", hit.get("id", ""))
 
-    return {
+    summary = {
         "inspire_id": inspire_id,
-        "title": title,
-        "authors": author_names,
-        "abstract": abstract[:500] + ("…" if len(abstract) > 500 else ""),
-        "year": meta.get("earliest_date", "")[:4],
-        "journal": journal,
-        "arxiv_id": arxiv_id,
-        "doi": doi,
+        "title": titles[0].get("title", "N/A"),
+        "authors": _build_author_names(meta),
+        "collaborations": [
+            c.get("value") for c in meta.get("collaborations") or [] if c.get("value")
+        ],
+        "year": _extract_year(meta),
+        "journal": publication_info[0].get("journal_title", ""),
+        "abstract": abstract[:ABSTRACT_LIMIT]
+        + ("…" if len(abstract) > ABSTRACT_LIMIT else ""),
         "citation_count": meta.get("citation_count", 0),
+        "arxiv_id": arxiv_eprints[0].get("value", ""),
+        "doi": dois[0].get("value", ""),
         "inspire_url": f"{INSPIRE_URL}/literature/{inspire_id}",
     }
+    return {key: value for key, value in summary.items() if value or value == 0}
 
 
 async def _fetch_literature(params: dict) -> dict:
@@ -80,7 +110,9 @@ async def _fetch_literature(params: dict) -> dict:
     Raises httpx.HTTPStatusError on non-2xx responses.
     """
     async with httpx.AsyncClient(timeout=15.0) as client:
-        response = await client.get(f"{BASE_URL}/literature", params=params)
+        response = await client.get(
+            f"{BASE_URL}/literature", params=params, headers=UI_SERIALIZER_HEADERS
+        )
         response.raise_for_status()
         return response.json()
 
@@ -192,7 +224,9 @@ async def get_paper_by_id(inspire_id: int) -> dict:
                     e.g. 1705857 for inspirehep.net/literature/1705857.
     """
     async with httpx.AsyncClient(timeout=15.0) as client:
-        response = await client.get(f"{BASE_URL}/literature/{inspire_id}")
+        response = await client.get(
+            f"{BASE_URL}/literature/{inspire_id}", headers=UI_SERIALIZER_HEADERS
+        )
         response.raise_for_status()
         data = response.json()
 
@@ -302,7 +336,11 @@ if __name__ == "__main__":
             mcp.settings.transport_security = TransportSecuritySettings(
                 enable_dns_rebinding_protection=True,
                 allowed_hosts=[allowed_host, "127.0.0.1:*", "localhost:*"],
-                allowed_origins=[f"https://{allowed_host}", "http://127.0.0.1:*", "http://localhost:*"],
+                allowed_origins=[
+                    f"https://{allowed_host}",
+                    "http://127.0.0.1:*",
+                    "http://localhost:*",
+                ],
             )
         mcp.run(transport="streamable-http")
     else:

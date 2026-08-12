@@ -170,6 +170,22 @@ identifier was used.
 
 ---
 
+## How records are fetched
+
+Literature records are requested through INSPIRE's UI serializer
+(`Accept: application/vnd+inspire.record.ui+json`) rather than the default
+representation. The default one returns every author of a paper, and a large
+collaboration paper has thousands — a ten-result search costs about 3 MB and
+750 ms that way, against roughly 120 KB and 150 ms through the UI serializer,
+for the same summaries.
+
+That serializer caps `authors` at ten and reports the true total separately as
+`number_of_authors`, which is what `et al.` is based on. It has no
+`earliest_date`, so the year falls back through `preprint_date`, the displayed
+`date`, and finally `publication_info.year`.
+
+---
+
 ## Development
 
 ```bash
