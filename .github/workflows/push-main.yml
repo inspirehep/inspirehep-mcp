@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.ref }}
-      - uses: cern-sis/gh-workflows/.github/actions/docker-build@v7.0.0
+      - uses: cern-sis/gh-workflows/.github/actions/docker-build@v7.1.0
         id: build
         with:
           image: cern-sis/inspire/inspirehep-mcp
@@ -36,7 +36,7 @@ jobs:
     needs: [build-and-push]
     runs-on: ubuntu-latest
     steps:
-      - uses: cern-sis/gh-workflows/.github/actions/kubernetes-project-new-images@v7.0.0
+      - uses: cern-sis/gh-workflows/.github/actions/kubernetes-project-new-images@v7.1.0
         with:
           event-type: update
           repo: cern-sis/kubernetes-inspire
